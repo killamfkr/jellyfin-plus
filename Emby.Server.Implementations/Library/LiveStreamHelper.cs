@@ -71,12 +71,13 @@ namespace Emby.Server.Implementations.Library
                 if (addProbeDelay)
                 {
                     var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
-                    delayMs = Math.Max(3000, delayMs);
+                    // Jellyfin Plus: faster IPTV / live probe scheduling
+                    delayMs = Math.Max(1000, delayMs);
                     _logger.LogInformation("Waiting {0}ms before probing the live stream", delayMs);
                     await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
                 }
 
-                mediaSource.AnalyzeDurationMs = 3000;
+                mediaSource.AnalyzeDurationMs = 1000;
 
                 mediaInfo = await _mediaEncoder.GetMediaInfo(
                     new MediaInfoRequest
@@ -177,7 +178,7 @@ namespace Emby.Server.Implementations.Library
                 videoStream.IsAVC = null;
             }
 
-            mediaSource.AnalyzeDurationMs = 3000;
+            mediaSource.AnalyzeDurationMs = 1000;
 
             // Try to estimate this
             mediaSource.InferTotalBitrate(true);

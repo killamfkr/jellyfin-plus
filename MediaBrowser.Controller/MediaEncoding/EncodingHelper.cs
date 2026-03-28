@@ -2387,7 +2387,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var requestedRangeTypes = state.GetRequestedRangeTypes(videoStream.Codec);
-            if (requestedRangeTypes.Length > 0)
+            // Jellyfin Plus: IPTV/LiveTV probes often report Unknown HDR range; still allow remux when codecs match
+            var skipLiveUnknownVideoRange = !string.IsNullOrWhiteSpace(request.LiveStreamId)
+                && videoStream.VideoRangeType == VideoRangeType.Unknown;
+
+            if (requestedRangeTypes.Length > 0 && !skipLiveUnknownVideoRange)
             {
                 if (videoStream.VideoRangeType == VideoRangeType.Unknown)
                 {
@@ -2459,7 +2463,15 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // Add a little tolerance to the framerate check because some videos might record a framerate
                 // that is slightly greater than the intended framerate, but the device can still play it correctly.
                 // 0.05 fps tolerance should be safe enough.
-                if (!videoFrameRate.HasValue || videoFrameRate.Value > requestedFramerate.Value + 0.05f)
+                if (!videoFrameRate.HasValue)
+                {
+                    // Jellyfin Plus: live streams frequently have no probed fps — prefer remux over transcode
+                    if (string.IsNullOrWhiteSpace(request.LiveStreamId))
+                    {
+                        return false;
+                    }
+                }
+                else if (videoFrameRate.Value > requestedFramerate.Value + 0.05f)
                 {
                     return false;
                 }
@@ -2548,10 +2560,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (!audioStream.Channels.HasValue || audioStream.Channels.Value <= 0)
                 {
-                    return false;
+                    // Jellyfin Plus: IPTV audio channel count often missing from probe
+                    if (string.IsNullOrWhiteSpace(request.LiveStreamId))
+                    {
+                        return false;
+                    }
                 }
-
-                if (audioStream.Channels.Value > channels.Value)
+                else if (audioStream.Channels.Value > channels.Value)
                 {
                     return false;
                 }
@@ -2562,10 +2577,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (!audioStream.SampleRate.HasValue || audioStream.SampleRate.Value <= 0)
                 {
-                    return false;
+                    if (string.IsNullOrWhiteSpace(request.LiveStreamId))
+                    {
+                        return false;
+                    }
                 }
-
-                if (audioStream.SampleRate.Value > request.AudioSampleRate.Value)
+                else if (audioStream.SampleRate.Value > request.AudioSampleRate.Value)
                 {
                     return false;
                 }

@@ -95,7 +95,8 @@ public class StreamState : EncodingJobInfo, IDisposable
 
                 if (IsSegmentedLiveStream)
                 {
-                    return 3;
+                    // Jellyfin Plus: shorter HLS segments for live — quicker first playable segment on zap
+                    return 2;
                 }
 
                 return 6;

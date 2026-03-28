@@ -675,13 +675,15 @@ namespace Emby.Server.Implementations.Library
                 if (addProbeDelay)
                 {
                     var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
-                    delayMs = Math.Max(3000, delayMs);
+                    // Jellyfin Plus: shorter pre-probe wait for IPTV / live (faster channel change)
+                    delayMs = Math.Max(1000, delayMs);
                     await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (isLiveStream)
                 {
-                    mediaSource.AnalyzeDurationMs = 3000;
+                    // Jellyfin Plus: ~1s ffmpeg analyze for live (was 3s) — faster tune, still enough for most M3U/HLS
+                    mediaSource.AnalyzeDurationMs = 1000;
                 }
 
                 mediaInfo = await _mediaEncoder.GetMediaInfo(
@@ -788,7 +790,7 @@ namespace Emby.Server.Implementations.Library
 
             if (isLiveStream)
             {
-                mediaSource.AnalyzeDurationMs = 3000;
+                mediaSource.AnalyzeDurationMs = 1000;
             }
 
             // Try to estimate this
