@@ -1,0 +1,24 @@
+# Build Jellyfin Plus from the current directory (for contributors / local patches).
+#
+#   docker compose -f docker-compose.local.yml build
+#   docker compose -f docker-compose.local.yml up -d
+
+services:
+  jellyfin-plus:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JELLYFIN_WEB_REF: v10.11.6
+    image: jellyfin-plus:local
+    container_name: jellyfin-plus
+    ports:
+      - "8096:8096"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+    restart: unless-stopped
+
+volumes:
+  jellyfin-config:
+  jellyfin-cache:

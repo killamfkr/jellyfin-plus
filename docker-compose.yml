@@ -1,0 +1,45 @@
+# Jellyfin Plus — Docker (no git clone on the server required)
+#
+# Build pulls sources from GitHub (Docker BuildKit). Requires Docker Compose v2.17+ / Buildx.
+#
+#   docker compose build
+#   docker compose up -d
+#
+# To use your fork, change JELLYFIN_PLUS_REPO below (full .git URL + #branch).
+# After upstream updates: docker compose build --no-cache
+#
+# Local development (build from this folder): use docker-compose.local.yml instead.
+
+x-jellyfin-plus-git: &jellyfin-plus-git
+  # Change only this line to point at another fork/branch:
+  context: https://github.com/killamfkr/jellyfin-plus.git#master
+  dockerfile: docker/Dockerfile
+  args:
+    # jellyfin-web: https://github.com/jellyfin/jellyfin-web/tags — use master if needed
+    JELLYFIN_WEB_REF: v10.11.6
+
+services:
+  jellyfin-plus:
+    build: *jellyfin-plus-git
+    image: jellyfin-plus:local
+    container_name: jellyfin-plus
+    ports:
+      - "8096:8096"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      # Uncomment to mount host media (adjust path):
+      # - /path/to/media:/media:ro
+    restart: unless-stopped
+    # GPU (NVIDIA) — optional; requires NVIDIA Container Toolkit on the host
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  jellyfin-config:
+  jellyfin-cache:
